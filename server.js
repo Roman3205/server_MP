@@ -4,12 +4,11 @@ let bcrypt = require('bcrypt')
 let jwt = require('jsonwebtoken')
 let cookieParser = require('cookie-parser')
 let path = require('path')
-require('dotenv').config({ path: path.resolve(__dirname, '../../.env') })
+require('dotenv').config({ path: path.resolve(__dirname, './.env') })
 let frontPort = process.env.FRONTEND_PORT
 let frontHost = process.env.FRONTEND_HOST
 let backPort = process.env.VITE_BACKEND_PORT
 let backHost = process.env.VITE_BACKEND_HOST
-let router = express.Router()
 
 app.listen(backPort, () => {
     console.log('http://' + backHost + ':' + backPort)
@@ -308,7 +307,7 @@ let CreateUniqueRefundId = async () => {
     }
 }
 
-router.post('/registration', async (req, res) => {
+app.post('/registration', async (req, res) => {
     let { name, password, mail } = req.body
 
     let checkMail = await Customer.findOne({mail: mail})
@@ -348,7 +347,7 @@ router.post('/registration', async (req, res) => {
     res.sendStatus(200)
 })
 
-router.post('/login', async (req,res) => {
+app.post('/login', async (req,res) => {
     let { mail, password } = req.body
 
     let customer = await Customer.findOne({mail: mail})
@@ -375,7 +374,7 @@ router.post('/login', async (req,res) => {
     res.send(token)
 })
 
-router.get('/main', VerifyTokenUser, async (req, res) => {
+app.get('/main', VerifyTokenUser, async (req, res) => {
     let customer = await Customer.findOne({ _id: req.userId })
 
     if(!customer) {
@@ -385,7 +384,7 @@ router.get('/main', VerifyTokenUser, async (req, res) => {
     res.send(customer)
 })
 
-router.post('/mail/change', VerifyTokenUser, async (req, res) => {
+app.post('/mail/change', VerifyTokenUser, async (req, res) => {
     let mail = req.body.mail
     let check = await Customer.findOne({ mail: mail })
 
@@ -406,7 +405,7 @@ router.post('/mail/change', VerifyTokenUser, async (req, res) => {
     res.status(200).send('Почта успешно изменена')
 })
 
-router.post('/name/change', VerifyTokenUser, async (req, res) => {
+app.post('/name/change', VerifyTokenUser, async (req, res) => {
     let name = req.body.name
 
     let customer = await Customer.findOne({ _id: req.userId })
@@ -422,13 +421,13 @@ router.post('/name/change', VerifyTokenUser, async (req, res) => {
     res.sendStatus(200)
 })
 
-router.get('/products/all', async (req, res) => {
+app.get('/products/all', async (req, res) => {
     let products = await Product.find().populate('brand_id')
 
     res.send(products)
 })
 
-router.get('/product', async (req, res) => {
+app.get('/product', async (req, res) => {
     let article = req.query.article
 
     let product = await Product.findOne({article: article}).populate({
@@ -450,7 +449,7 @@ router.get('/product', async (req, res) => {
     res.send(product)
 })
 
-router.post('/balance/topup', VerifyTokenUser, async (req, res) => {
+app.post('/balance/topup', VerifyTokenUser, async (req, res) => {
     let money = req.body.money
 
     let customer = await Customer.findOne({_id: req.userId})
@@ -471,7 +470,7 @@ router.post('/balance/topup', VerifyTokenUser, async (req, res) => {
     res.sendStatus(200)
 })
 
-router.get('/balance/operations', VerifyTokenUser, async (req, res) => {
+app.get('/balance/operations', VerifyTokenUser, async (req, res) => {
     let customer = await Customer.findOne({_id: req.userId}).populate('operations')
 
     if(!customer) {
@@ -483,7 +482,7 @@ router.get('/balance/operations', VerifyTokenUser, async (req, res) => {
     res.send(data)
 })
 
-router.get('/reviews/all', VerifyTokenUser, async (req, res) => {
+app.get('/reviews/all', VerifyTokenUser, async (req, res) => {
     let customer = await Customer.findOne({_id: req.userId}).populate({
         path: 'reviews',
         populate: [
@@ -504,7 +503,7 @@ router.get('/reviews/all', VerifyTokenUser, async (req, res) => {
     res.send(customer)
 })
 
-router.post('/review/remove', VerifyTokenUser, async (req, res) => {
+app.post('/review/remove', VerifyTokenUser, async (req, res) => {
     let { article, id } = req.body
 
     let customer = await Customer.findOne({_id: req.userId}).populate('reviews')
@@ -540,7 +539,7 @@ router.post('/review/remove', VerifyTokenUser, async (req, res) => {
     res.sendStatus(200)
 })
 
-router.post('/review/create', VerifyTokenUser, async (req, res) => {
+app.post('/review/create', VerifyTokenUser, async (req, res) => {
     let { article, text, rating } = req.body
 
     let customer = await Customer.findOne({_id: req.userId}).populate({
@@ -605,7 +604,7 @@ router.post('/review/create', VerifyTokenUser, async (req, res) => {
     res.sendStatus(200)
 })
 
-router.post('/cart/add', VerifyTokenUser, async (req, res) => {
+app.post('/cart/add', VerifyTokenUser, async (req, res) => {
     let article = req.body.article
 
     let customer = await Customer.findOne({ _id: req.userId }).populate('cart_id')
@@ -630,7 +629,7 @@ router.post('/cart/add', VerifyTokenUser, async (req, res) => {
     res.sendStatus(200)
 })
 
-router.post('/cart/remove', VerifyTokenUser, async (req, res) => {
+app.post('/cart/remove', VerifyTokenUser, async (req, res) => {
     let article = req.body.article
 
     let customer = await Customer.findOne({_id: req.userId}).populate('cart_id')
@@ -651,7 +650,7 @@ router.post('/cart/remove', VerifyTokenUser, async (req, res) => {
     res.sendStatus(200)
 })
 
-router.get('/product/check', VerifyTokenUser, async (req, res) => {
+app.get('/product/check', VerifyTokenUser, async (req, res) => {
     let article = req.query.article
 
     let customer = await Customer.findOne({ _id: req.userId })
@@ -673,7 +672,7 @@ router.get('/product/check', VerifyTokenUser, async (req, res) => {
     res.sendStatus(200)
 })
 
-router.get('/cart', VerifyTokenUser, async (req, res) => {
+app.get('/cart', VerifyTokenUser, async (req, res) => {
     let customer = await Customer.findOne({ _id: req.userId })
 
     if(!customer) {
@@ -695,7 +694,7 @@ router.get('/cart', VerifyTokenUser, async (req, res) => {
     res.send({customer, cart})
 })
 
-router.post('/order/create', VerifyTokenUser, async (req, res) => {
+app.post('/order/create', VerifyTokenUser, async (req, res) => {
     let products = req.body.products
 
     let customer = await Customer.findOne({ _id: req.userId })
@@ -755,7 +754,7 @@ router.post('/order/create', VerifyTokenUser, async (req, res) => {
     res.sendStatus(200)
 })
 
-router.get('/orders/all', VerifyTokenUser, async (req, res) => {
+app.get('/orders/all', VerifyTokenUser, async (req, res) => {
     let customer = await Customer.findOne({ _id: req.userId }).populate({
         path: 'orders',
         populate: 'product_id',
@@ -771,7 +770,7 @@ router.get('/orders/all', VerifyTokenUser, async (req, res) => {
     res.send(customer)
 })
 
-router.post('/order/recieved', VerifyTokenUser, async(req, res) => {
+app.post('/order/recieved', VerifyTokenUser, async(req, res) => {
     let id = req.body.id
 
     let customer = await Customer.findOne({ _id: req.userId })
@@ -816,7 +815,7 @@ router.post('/order/recieved', VerifyTokenUser, async(req, res) => {
     res.sendStatus(200)
 })
 
-router.get('/purchases', VerifyTokenUser, async (req, res) => {
+app.get('/purchases', VerifyTokenUser, async (req, res) => {
     let customer = await Customer.findOne({ _id: req.userId }).populate({
         path: 'orders',
         match: {status: 'Получен'},
@@ -835,7 +834,7 @@ router.get('/purchases', VerifyTokenUser, async (req, res) => {
     res.send(customer)
 })
 
-router.post('/chat/create', VerifyTokenUser, async (req, res) => {
+app.post('/chat/create', VerifyTokenUser, async (req, res) => {
     let id = req.body.id
 
     let customer = await Customer.findOne({_id: req.userId})
@@ -871,7 +870,7 @@ router.post('/chat/create', VerifyTokenUser, async (req, res) => {
     res.sendStatus(200)
 })
 
-router.get('/chats/all', VerifyTokenUser, async (req, res) => {
+app.get('/chats/all', VerifyTokenUser, async (req, res) => {
     let customer = await Customer.findOne({_id: req.userId})
 
     if(!customer) {
@@ -920,7 +919,7 @@ router.get('/chats/all', VerifyTokenUser, async (req, res) => {
     res.send(chatsAll)
 })
 
-router.get('/user/chat', VerifyTokenUser, async (req, res) => {
+app.get('/user/chat', VerifyTokenUser, async (req, res) => {
     let id = req.query.id
 
     let customer = await Customer.findOne({_id: req.userId})
@@ -986,7 +985,7 @@ router.get('/user/chat', VerifyTokenUser, async (req, res) => {
     res.send({chat, messages})
 })
 
-router.post('/user/message/send', VerifyTokenUser, async (req, res) => {
+app.post('/user/message/send', VerifyTokenUser, async (req, res) => {
     let { text, to, id } = req.body
 
     let customer = await Customer.findOne({ _id: req.userId })
@@ -1012,7 +1011,7 @@ router.post('/user/message/send', VerifyTokenUser, async (req, res) => {
     res.sendStatus(200)
 })
 
-router.post('/refund/create', VerifyTokenUser, async (req, res) => {
+app.post('/refund/create', VerifyTokenUser, async (req, res) => {
     let productId = req.body.productId
     let sellerId = req.body.sellerId
     let orderId = req.body.orderId
@@ -1055,7 +1054,7 @@ router.post('/refund/create', VerifyTokenUser, async (req, res) => {
     res.sendStatus(200)
 })
 
-router.get('/refund/all', VerifyTokenUser, async (req, res) => {
+app.get('/refund/all', VerifyTokenUser, async (req, res) => {
     let customer = await Customer.findOne({_id: req.userId}).populate({
         path: 'refunds',
         match: {status: {$ne: 'Завершен'}}
@@ -1070,7 +1069,7 @@ router.get('/refund/all', VerifyTokenUser, async (req, res) => {
     res.send(data)
 })
 
-router.get('/refund', VerifyTokenUser, async (req, res) => {
+app.get('/refund', VerifyTokenUser, async (req, res) => {
     let id = req.query.id
 
     let customer = await Customer.findOne({_id: req.userId}).populate('refunds')
@@ -1087,7 +1086,7 @@ router.get('/refund', VerifyTokenUser, async (req, res) => {
     res.send(refund)
 })
 
-router.post('/refund/fill', VerifyTokenUser, async (req, res) => {
+app.post('/refund/fill', VerifyTokenUser, async (req, res) => {
     let { id, albumLink, text } = req.body
 
     let customer = await Customer.findOne({_id: req.userId}).populate('refunds')
@@ -1107,7 +1106,7 @@ router.post('/refund/fill', VerifyTokenUser, async (req, res) => {
     res.sendStatus(200)
 })
 
-router.post('/refund/return/money', VerifyTokenUser, async (req, res) => {
+app.post('/refund/return/money', VerifyTokenUser, async (req, res) => {
     let id = req.body.id
 
     let customer = await Customer.findOne({_id: req.userId})
@@ -1148,13 +1147,13 @@ router.post('/refund/return/money', VerifyTokenUser, async (req, res) => {
     res.sendStatus(200)
 })
 
-router.post('/logout', async (req, res) => {
+app.post('/logout', async (req, res) => {
     res.clearCookie(process.env.COOKIE_USER)
 
     res.sendStatus(200)
 })
 
-router.post('/registration/seller', async (req, res) => {
+app.post('/registration/seller', async (req, res) => {
     let { brandName, brandCategory, name, mail, tel, description, password } = req.body
     
     let check = await Seller.findOne({mail: mail})
@@ -1190,7 +1189,7 @@ router.post('/registration/seller', async (req, res) => {
     res.sendStatus(200)
 })
 
-router.post('/login/seller', async (req, res) => {
+app.post('/login/seller', async (req, res) => {
     let { mail, password } = req.body
 
     let seller = await Seller.findOne({mail: mail})
@@ -1215,7 +1214,7 @@ router.post('/login/seller', async (req, res) => {
     res.send(token)
 })
 
-router.get('/seller/main', VerifyTokenSeller, async (req, res) => {
+app.get('/seller/main', VerifyTokenSeller, async (req, res) => {
     let seller = await Seller.findOne({_id: req.sellerId})
 
     if(!seller) {
@@ -1225,7 +1224,7 @@ router.get('/seller/main', VerifyTokenSeller, async (req, res) => {
     res.send(seller)
 })
 
-router.post('/product/create', VerifyTokenSeller, async (req, res) => {
+app.post('/product/create', VerifyTokenSeller, async (req, res) => {
     let { title, description, price, category, picture } = req.body
     
     let seller = await Seller.findOne({_id: req.sellerId})
@@ -1265,7 +1264,7 @@ router.post('/product/create', VerifyTokenSeller, async (req, res) => {
     res.sendStatus(200)
 })
 
-router.get('/seller/products/all', VerifyTokenSeller, async (req, res) => {
+app.get('/seller/products/all', VerifyTokenSeller, async (req, res) => {
     let seller = await Seller.findOne({_id: req.sellerId}).populate('products')
 
     if(!seller) {
@@ -1275,7 +1274,7 @@ router.get('/seller/products/all', VerifyTokenSeller, async (req, res) => {
     res.send(seller)
 })
 
-router.post('/product/remove', VerifyTokenSeller, async (req, res) => {
+app.post('/product/remove', VerifyTokenSeller, async (req, res) => {
     let id = req.body.id
 
     let seller = await Seller.findOne({_id: req.sellerId})
@@ -1292,7 +1291,7 @@ router.post('/product/remove', VerifyTokenSeller, async (req, res) => {
     res.sendStatus(200)
 })
 
-router.post('/product/return/sell', VerifyTokenSeller, async (req, res) => {
+app.post('/product/return/sell', VerifyTokenSeller, async (req, res) => {
     let id = req.body.id
 
     let seller = await Seller.findOne({_id: req.sellerId})
@@ -1309,7 +1308,7 @@ router.post('/product/return/sell', VerifyTokenSeller, async (req, res) => {
     res.sendStatus(200)
 })
 
-router.get('/seller/orders/all', VerifyTokenSeller, async (req, res) => {
+app.get('/seller/orders/all', VerifyTokenSeller, async (req, res) => {
     let seller = await Seller.findOne({_id: req.sellerId})
 
     if(!seller) {
@@ -1326,7 +1325,7 @@ router.get('/seller/orders/all', VerifyTokenSeller, async (req, res) => {
     res.send(orders)    
 })
 
-router.post('/discount/set', VerifyTokenSeller, async (req, res) => {
+app.post('/discount/set', VerifyTokenSeller, async (req, res) => {
     let { id, discount } = req.body
 
     let seller = await Seller.findOne({_id: req.sellerId})
@@ -1345,7 +1344,7 @@ router.post('/discount/set', VerifyTokenSeller, async (req, res) => {
     res.sendStatus(200)
 })
 
-router.post('/seller/order/change', VerifyTokenSeller, async (req, res) => {
+app.post('/seller/order/change', VerifyTokenSeller, async (req, res) => {
     let { status, id } = req.body
 
     let seller = await Seller.findOne({_id: req.sellerId})
@@ -1383,7 +1382,7 @@ router.post('/seller/order/change', VerifyTokenSeller, async (req, res) => {
     res.sendStatus(200)
 })
 
-router.get('/seller/refunds/all', VerifyTokenSeller, async (req, res) => {
+app.get('/seller/refunds/all', VerifyTokenSeller, async (req, res) => {
     let seller = await Seller.findOne({_id: req.sellerId}).populate({
         path: 'refunds',
         populate: [
@@ -1406,7 +1405,7 @@ router.get('/seller/refunds/all', VerifyTokenSeller, async (req, res) => {
     res.send(data)    
 })
 
-router.post('/seller/refund/change', VerifyTokenSeller, async (req, res) => {
+app.post('/seller/refund/change', VerifyTokenSeller, async (req, res) => {
     let { status, id } = req.body
 
     let seller = await Seller.findOne({_id: req.sellerId})
@@ -1443,7 +1442,7 @@ router.post('/seller/refund/change', VerifyTokenSeller, async (req, res) => {
     res.sendStatus(200)
 })
 
-router.get('/seller/chats/all', VerifyTokenSeller, async (req, res) => {
+app.get('/seller/chats/all', VerifyTokenSeller, async (req, res) => {
     let seller = await Seller.findOne({_id: req.sellerId})
 
     if(!seller) {
@@ -1492,7 +1491,7 @@ router.get('/seller/chats/all', VerifyTokenSeller, async (req, res) => {
     res.send(chatsAll)
 })
 
-router.get('/seller/chat', VerifyTokenSeller, async (req, res) => {
+app.get('/seller/chat', VerifyTokenSeller, async (req, res) => {
     let id = req.query.id
 
     let seller = await Seller.findOne({_id: req.sellerId})
@@ -1558,7 +1557,7 @@ router.get('/seller/chat', VerifyTokenSeller, async (req, res) => {
     res.send({chat, messages})
 })
 
-router.post('/seller/message/send', VerifyTokenSeller, async (req, res) => {
+app.post('/seller/message/send', VerifyTokenSeller, async (req, res) => {
     let { text, to, id } = req.body
 
     let seller = await Seller.findOne({ _id: req.sellerId })
@@ -1584,12 +1583,8 @@ router.post('/seller/message/send', VerifyTokenSeller, async (req, res) => {
     res.sendStatus(200)
 })
 
-router.post('/logout/seller', async (req, res) => {
+app.post('/logout/seller', async (req, res) => {
     res.clearCookie(process.env.COOKIE_SELLER)
 
     res.sendStatus(200)
 })
-
-let serverless = require('serverless-http')
-app.use('.netlify/functios/server', router)
-module.exports.handler = serverless(app)
