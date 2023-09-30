@@ -5,7 +5,6 @@ let jwt = require('jsonwebtoken')
 let cookieParser = require('cookie-parser')
 let path = require('path')
 require('dotenv').config({ path: path.resolve(__dirname, './.env') })
-let frontPort = process.env.FRONTEND_PORT
 let frontHost = process.env.FRONTEND_HOST
 let backPort = process.env.VITE_BACKEND_PORT
 let backHost = process.env.VITE_BACKEND_HOST
@@ -17,7 +16,7 @@ app.listen(backPort, () => {
 let cors = require('cors')
 app.use(cors({
     credentials: true,
-    origin: 'http://' + frontHost + ':' + frontPort
+    origin: 'https://' + frontHost
 }))
 
 app.use(express.json())
