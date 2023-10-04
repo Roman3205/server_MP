@@ -16,7 +16,7 @@ app.listen(backPort, () => {
 let cors = require('cors')
 app.use(cors({
     credentials: true,
-    origin: 'https://' + frontHost
+    origin: frontHost
 }))
 
 app.use(express.json())
