@@ -668,6 +668,10 @@ app.get('/product/check', VerifyTokenUser, async (req, res) => {
         
     let product = await Product.findOne({article: article})
 
+    if(!product) {
+        return res.status(404).send('Товар не найден')
+    }
+
     let cart = await Cart.findOne({_id: customer.cart_id})
     
     let check = cart.products.includes(product._id)
