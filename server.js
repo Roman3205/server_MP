@@ -8,6 +8,7 @@ require('dotenv').config({ path: path.resolve(__dirname, './.env') })
 let frontHost = process.env.FRONTEND_HOST
 let backPort = process.env.VITE_BACKEND_PORT
 let backHost = process.env.VITE_BACKEND_HOST
+let paymentSite = process.env.PAYMENT_SITE
 
 app.listen(backPort, () => {
     console.log('http://' + backHost + ':' + backPort)
@@ -16,7 +17,13 @@ app.listen(backPort, () => {
 let cors = require('cors')
 app.use(cors({
     credentials: true,
-    origin: frontHost
+    origin: (origin, callback) => {
+        if([frontHost, paymentSite].includes(origin)) {
+            callback(null, true)
+        } else {
+            throw Error('Not allowed by CORS')
+        }
+    }
 }))
 
 app.use((req,res,next) => {
@@ -31,8 +38,11 @@ app.use(express.json())
 app.use(cookieParser())
 
 let mongoose = require('mongoose')
+mongoose.set('strictQuery', false)
 let uri = process.env.MONGODB_HOST
-mongoose.connect(uri)
+mongoose.connect(uri).catch(error => {
+    console.log('Произошла ошибка с подключением бд');
+})
 
 let cartSchema = new mongoose.Schema({
     products: [{
@@ -278,6 +288,17 @@ let VerifyTokenSeller = (req, res, next) => {
     })
 }
 
+let CreateNumPay = () => {
+    let result = ''
+    let characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+    for(let i = 0; i < 40; i++) {
+        let random = Math.floor(Math.random() * characters.length)
+        result += characters.charAt(random)
+    }
+    
+    return result
+}
+
 let getRandomArticle = () => {
     let min = 100000
     let max = 999999
@@ -429,7 +450,22 @@ app.post('/name/change', VerifyTokenUser, async (req, res) => {
 })
 
 app.get('/products/all', async (req, res) => {
-    let products = await Product.find().populate('brand_id')
+    let products = await Product.find().populate({path: 'brand_id', select: 'brandName'}).limit(40).select('title price category picture brand_id discount article')
+
+    res.send(products)
+})
+
+app.get('/products/category', async (req,res) => {
+    let category = req.query.category
+
+    let products = await Product.find({category: category}).populate({path: 'brand_id', select: 'brandName'}).limit(40).select('title price category picture brand_id discount article')
+
+    res.send(products)
+})
+
+app.get('/products/filter', async (req, res) => {
+    let value = req.query.value
+    let products = await Product.find({title: RegExp(value, 'i')}).populate({path: 'brand_id', select: 'brandName'}).limit(40).select('title price category picture brand_id discount article')
 
     res.send(products)
 })
@@ -465,11 +501,37 @@ app.post('/balance/topup', VerifyTokenUser, async (req, res) => {
         return res.status(401).send('Вы не авторизованы')
     }
 
-    customer.balance += money
+    let uniqueToken = jwt.sign({money: money, random: CreateNumPay(), userId: customer._id}, process.env.UNIQUE_CODE)
+
+    res.status(200).send({
+        money: money,
+        toCard: 2023859628616081,
+        unique: uniqueToken,
+        redirectTo: `${frontHost}/lk/mywallet/purchases`,
+        routeTopUp: `${process.env.SELF_URL}/balance/pay`,
+        servBank: `${process.env.SERV_BANK}`
+    })
+})
+
+app.post('/balance/pay', async (req,res) => {
+    let {codePay} = req.body
+
+    jwt.verify(codePay, process.env.UNIQUE_CODE, (error,decoded) => {
+        if(error) {
+            return res.status(409).send('Ошибка с пополнением')
+        }
+
+        req.money = decoded.money
+        req.userId = decoded.userId
+    })
+
+    let customer = await Customer.findOne({_id: req.userId})
+
+    customer.balance += req.money
 
     customer.operations.push({
         name: 'replenishment',
-        money: money
+        money: req.money
     })
 
     await customer.save()
